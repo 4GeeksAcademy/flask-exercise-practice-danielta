@@ -1,6 +1,8 @@
 """
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
+import math
+import random
 import os
 from flask import Flask, request, jsonify, url_for
 from flask_migrate import Migrate
@@ -26,6 +28,11 @@ db.init_app(app)
 CORS(app)
 setup_admin(app)
 
+users = [
+    { "username": "user1", "password": "password", "id": "1"},
+    { "username": "user2", "password": "passcode", "id": "2"}
+]
+
 # Handle/serialize errors like a JSON object
 @app.errorhandler(APIException)
 def handle_invalid_usage(error):
@@ -36,14 +43,33 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/user', methods=['GET'])
-def handle_hello():
+@app.route('/users', methods=['GET'])
+def get_user():
+    json_text = jsonify(users)
+    return json_text
 
-    response_body = {
-        "msg": "Hello, this is your GET /user response "
-    }
+    # return jsonify(response_body), 200
 
-    return jsonify(response_body), 200
+@app.route('/users', methods=['POST'])
+def add_new_user():
+    request_body = request.json 
+    new_id = random.randint(3,999)
+    request_body["id"] = new_id
+    users.append(request_body)
+    return jsonify(users)
+
+@app.route('/users/<int:position>', methods=['PUT'])
+def change_user(position):
+    request_body = request.json
+    users[position] = request_body
+    return jsonify(users)
+
+@app.route('/users/<int:position>', methods=['DELETE'])
+def delete_user(position):
+    print("This is the position to delete:", position)
+    deleted = users.pop(position)
+    return jsonify(deleted)
+
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
